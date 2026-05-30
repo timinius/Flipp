@@ -46,6 +46,7 @@ function AppInner() {
         </Routes>
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   );
 }
