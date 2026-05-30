@@ -1,0 +1,14 @@
+{
+  "name": "ocko-marketplace",
+  "version": "1.0.0",
+  "description": "OCKO — Marketplace",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "NODE_ENV=production node backend/server.js",
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
