@@ -7,79 +7,169 @@ function formatPrice(p) {
   return new Intl.NumberFormat('ru-RU').format(p) + ' ₽';
 }
 
-// Категории и их синонимы для распознавания запроса
-const CATEGORY_KEYWORDS = {
-  electronics:  ['телефон', 'смартфон', 'ноутбук', 'компьютер', 'планшет', 'часы', 'наушники', 'камера', 'фото', 'игровая', 'playstation', 'xbox', 'iphone', 'samsung', 'apple', 'mac', 'электроник', 'гаджет', 'зарядк'],
-  clothing:     ['одежда', 'куртк', 'пальто', 'платье', 'костюм', 'джинс', 'футболк', 'кроссовк', 'обувь', 'ботинк', 'кеды', 'сапог', 'шапк', 'перчатк', 'носк', 'свитер', 'худи'],
-  home:         ['диван', 'кресло', 'стол', 'стул', 'шкаф', 'кровать', 'матрас', 'холодильник', 'стиральн', 'посуда', 'кастрюл', 'сковород', 'пылесос', 'кофемашин', 'мебель', 'светильник', 'ламп', 'дом', 'сад', 'огород'],
-  transport:    ['машина', 'автомобиль', 'мотоцикл', 'велосипед', 'самокат', 'скутер', 'авто', 'транспорт'],
-  sport:        ['спорт', 'фитнес', 'тренажер', 'гантел', 'штанг', 'мяч', 'ракетк', 'велосипед', 'лыж', 'сноуборд', 'палатк', 'туризм', 'рюкзак'],
-  beauty:       ['крем', 'парфюм', 'духи', 'косметик', 'уход', 'шампунь', 'маск', 'красота', 'здоровье', 'витамин'],
-  kids:         ['детск', 'игрушк', 'коляск', 'кроватк', 'ребенок', 'малыш', 'школ', 'рюкзак', 'конструктор', 'кукл', 'машинк'],
-  books:        ['книг', 'учебник', 'литератур', 'роман', 'хобби', 'настольн', 'игр'],
-  business:     ['бизнес', 'оборудован', 'станок', 'инструмент', 'офис', 'принтер'],
-  realty:       ['квартир', 'комнат', 'дом', 'недвижимост', 'участок', 'дач'],
-};
+// Маппинг намерений/целей → что искать
+const INTENTS = [
+  // Музыка и пение
+  { triggers: ['петь', 'пение', 'вокал', 'певец', 'певица', 'научиться петь', 'заниматься вокалом', 'музыкант', 'играть на гитаре', 'играть на пианино', 'музыка'],
+    searchTerms: ['микрофон', 'гитара', 'наушники', 'колонка', 'пианино', 'синтезатор'],
+    categories: ['electronics'],
+    label: 'для занятий музыкой и пением' },
 
-const CONDITION_KEYWORDS = {
-  new:  ['новый', 'новая', 'новое', 'новые', 'запечатан', 'не открыв'],
-  used: ['бу', 'б/у', 'подержан', 'использован', 'второй рук'],
-};
+  // Ремонт
+  { triggers: ['ремонт', 'ремонтировать', 'сделать ремонт', 'обустроить', 'отделка', 'покрасить стены', 'поклеить обои', 'перфоратор', 'шуруповерт'],
+    searchTerms: ['инструмент', 'перфоратор', 'шуруповерт', 'краска', 'обои', 'плитка', 'уровень', 'лестница'],
+    categories: ['business', 'home'],
+    label: 'для ремонта и строительства' },
 
-function parseQuery(text) {
+  // Спорт и похудение
+  { triggers: ['похудеть', 'сбросить вес', 'заняться спортом', 'фитнес', 'тренировки', 'качалка', 'тренажерный зал', 'бегать', 'качать мышцы', 'накачаться'],
+    searchTerms: ['гантели', 'коврик', 'штанга', 'велотренажер', 'скакалка', 'кроссовки'],
+    categories: ['sport', 'clothing'],
+    label: 'для занятий спортом и фитнесом' },
+
+  // Фотография
+  { triggers: ['фотографировать', 'фотография', 'фото', 'снимать', 'стать фотографом', 'научиться фотографировать', 'видеосъемка', 'блогер'],
+    searchTerms: ['фотоаппарат', 'камера', 'объектив', 'штатив', 'фото', 'sony', 'canon'],
+    categories: ['electronics'],
+    label: 'для фотографии и видеосъёмки' },
+
+  // Готовить / кулинария
+  { triggers: ['готовить', 'кулинария', 'научиться готовить', 'готовка', 'выпечка', 'печь торты', 'шеф', 'кухня'],
+    searchTerms: ['кофемашина', 'блендер', 'мультиварка', 'миксер', 'кастрюля', 'сковорода', 'нож'],
+    categories: ['home'],
+    label: 'для кулинарии и готовки' },
+
+  // Путешествия
+  { triggers: ['путешествовать', 'путешествие', 'поехать', 'поездка', 'командировка', 'туризм', 'поход', 'кемпинг', 'рюкзак'],
+    searchTerms: ['рюкзак', 'чемодан', 'палатка', 'спальник', 'термос', 'навигатор'],
+    categories: ['sport', 'kids'],
+    label: 'для путешествий и туризма' },
+
+  // Программирование / работа
+  { triggers: ['программировать', 'кодить', 'работать за компьютером', 'удалённая работа', 'учиться программированию', 'разработчик', 'дизайнер', 'фрилансер'],
+    searchTerms: ['ноутбук', 'монитор', 'клавиатура', 'мышь', 'наушники'],
+    categories: ['electronics'],
+    label: 'для работы и программирования' },
+
+  // Дети и семья
+  { triggers: ['ребенок', 'дети', 'малыш', 'для детей', 'беременна', 'родить', 'новорожденный', 'школа', 'первый класс', 'развитие ребенка'],
+    searchTerms: ['коляска', 'кроватка', 'игрушка', 'рюкзак', 'конструктор'],
+    categories: ['kids'],
+    label: 'для детей и малышей' },
+
+  // Игры / геймер
+  { triggers: ['играть в игры', 'геймер', 'gaming', 'игровой', 'видеоигры', 'стримить', 'киберспорт'],
+    searchTerms: ['playstation', 'xbox', 'джойстик', 'гарнитура', 'игровой монитор', 'клавиатура'],
+    categories: ['electronics'],
+    label: 'для игр и гейминга' },
+
+  // Йога / медитация
+  { triggers: ['йога', 'медитация', 'растяжка', 'пилатес', 'заниматься йогой'],
+    searchTerms: ['коврик', 'блок', 'ремень', 'одежда', 'спортивные'],
+    categories: ['sport', 'clothing'],
+    label: 'для йоги и медитации' },
+
+  // Сад / дача
+  { triggers: ['дача', 'сад', 'огород', 'садоводство', 'посадить', 'посеять', 'грядки', 'газон', 'урожай'],
+    searchTerms: ['лопата', 'грабли', 'лейка', 'теплица', 'семена', 'удобрение', 'газонокосилка'],
+    categories: ['home'],
+    label: 'для сада и огорода' },
+
+  // Читать / книги
+  { triggers: ['читать', 'чтение', 'книги', 'литература', 'библиотека', 'электронная книга'],
+    searchTerms: ['книга', 'ридер', 'лампа'],
+    categories: ['books'],
+    label: 'для чтения' },
+
+  // Автомобиль
+  { triggers: ['машина', 'авто', 'автомобиль', 'купить машину', 'купить авто', 'водить'],
+    searchTerms: ['автомобиль', 'машина', 'мотоцикл'],
+    categories: ['transport'],
+    label: 'из раздела транспорт' },
+
+  // Красота и уход
+  { triggers: ['уход за собой', 'красота', 'макияж', 'маникюр', 'прическа', 'похорошеть', 'выглядеть'],
+    searchTerms: ['крем', 'парфюм', 'косметика', 'уход', 'шампунь'],
+    categories: ['beauty'],
+    label: 'для ухода и красоты' },
+
+  // Учеба / школа
+  { triggers: ['учиться', 'школа', 'университет', 'студент', 'подготовка к урокам', 'онлайн-курс', 'самообразование'],
+    searchTerms: ['ноутбук', 'планшет', 'наушники', 'книга', 'рюкзак'],
+    categories: ['electronics', 'kids', 'books'],
+    label: 'для учёбы' },
+
+  // Велоспорт
+  { triggers: ['кататься на велосипеде', 'велопрогулки', 'велоспорт', 'велик'],
+    searchTerms: ['велосипед', 'шлем', 'замок', 'насос', 'перчатки'],
+    categories: ['sport', 'transport'],
+    label: 'для велоспорта' },
+
+  // Бизнес / офис
+  { triggers: ['открыть бизнес', 'офис', 'для работы', 'оборудование для бизнеса', 'кофейня', 'магазин'],
+    searchTerms: ['принтер', 'компьютер', 'кофемашина', 'оборудование', 'стол', 'кресло'],
+    categories: ['business', 'electronics', 'home'],
+    label: 'для бизнеса и офиса' },
+
+  // Подарок
+  { triggers: ['подарок', 'подарить', 'на день рождения', 'на новый год', 'на 8 марта', 'на 23 февраля'],
+    searchTerms: ['смартфон', 'наушники', 'часы', 'парфюм', 'игрушка'],
+    categories: ['electronics', 'beauty', 'kids'],
+    label: 'в качестве подарка' },
+
+  // Мотоцикл / скутер
+  { triggers: ['мотоцикл', 'скутер', 'мопед', 'ездить на мотоцикле'],
+    searchTerms: ['мотоцикл', 'скутер', 'шлем', 'перчатки мото'],
+    categories: ['transport'],
+    label: 'для мотоциклистов' },
+];
+
+// Нет смысла отвечать
+const OFF_TOPIC = ['политика', 'война', 'погода', 'гороскоп', 'рецепт', 'анекдот', 'стихи', 'напиши', 'переведи', 'объясни почему', 'кто такой', 'что такое', 'история страны', 'президент', 'курс валют', 'биткоин'];
+
+function detectIntent(text) {
   const lower = text.toLowerCase();
-
-  // Цена
-  let maxPrice = null, minPrice = null;
-  const upTo = lower.match(/до\s+([\d\s]+)\s*[рр₽]|не\s+дороже\s+([\d\s]+)|бюджет\s+([\d\s]+)/);
-  if (upTo) {
-    const num = (upTo[1] || upTo[2] || upTo[3]).replace(/\s/g, '');
-    maxPrice = parseInt(num);
+  for (const intent of INTENTS) {
+    if (intent.triggers.some(t => lower.includes(t))) return intent;
   }
-  const from = lower.match(/от\s+([\d\s]+)\s*[рр₽]/);
-  if (from) minPrice = parseInt(from[1].replace(/\s/g, ''));
-
-  // Категория
-  let category = null;
-  for (const [slug, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (keywords.some(kw => lower.includes(kw))) {
-      category = slug;
-      break;
-    }
-  }
-
-  // Состояние
-  let condition = null;
-  if (CONDITION_KEYWORDS.new.some(kw => lower.includes(kw))) condition = 'new';
-  else if (CONDITION_KEYWORDS.used.some(kw => lower.includes(kw))) condition = 'used';
-
-  // Ключевые слова
-  const stopWords = new Set(['что', 'есть', 'ищу', 'хочу', 'найди', 'покажи', 'мне', 'для', 'по', 'на', 'до', 'от', 'за', 'под', 'как', 'какой', 'какая', 'какие', 'нужен', 'нужна', 'нужно', 'посоветуй', 'подбери', 'порекомендуй', 'хороший', 'хорошая', 'хорошие', 'дешевый', 'дешевле', 'дороже', 'самый', 'лучший', 'купить', 'продать']);
-  const keywords = lower.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w) && !/^\d+$/.test(w));
-
-  return { keywords, category, maxPrice, minPrice, condition };
+  return null;
 }
 
-function searchProducts(parsed, db) {
-  const { keywords, category, maxPrice, minPrice, condition } = parsed;
+function isOffTopic(text) {
+  const lower = text.toLowerCase();
+  return OFF_TOPIC.some(p => lower.includes(p));
+}
 
-  const where = ['p.status = ?'];
-  const params = ['active'];
+function parsePrice(text) {
+  const lower = text.toLowerCase();
+  let maxPrice = null, minPrice = null;
+  const upTo = lower.match(/до\s*([\d\s]+)\s*[рр₽к]|не\s+дороже\s*([\d\s]+)|бюджет\s*([\d\s]+)/);
+  if (upTo) {
+    let num = (upTo[1] || upTo[2] || upTo[3]).replace(/\s/g, '');
+    if (lower.includes('к') && !lower.includes('каталог')) num = String(parseInt(num) * 1000);
+    maxPrice = parseInt(num);
+  }
+  const from = lower.match(/от\s*([\d\s]+)\s*[рр₽]/);
+  if (from) minPrice = parseInt(from[1].replace(/\s/g, ''));
+  return { maxPrice, minPrice };
+}
 
-  if (category) { where.push('c.slug = ?'); params.push(category); }
+function searchByTerms(terms, categories, maxPrice, minPrice, db) {
+  const where = ["p.status = 'active'"];
+  const params = [];
+
   if (maxPrice) { where.push('p.price <= ?'); params.push(maxPrice); }
   if (minPrice) { where.push('p.price >= ?'); params.push(minPrice); }
-  if (condition) { where.push('p.condition = ?'); params.push(condition); }
 
-  if (keywords.length > 0) {
-    const kw = keywords.map(() => '(p.title LIKE ? OR p.description LIKE ?)').join(' OR ');
-    where.push(`(${kw})`);
-    keywords.forEach(k => { params.push(`%${k}%`); params.push(`%${k}%`); });
+  const termClauses = terms.map(() => '(p.title LIKE ? OR p.description LIKE ?)').join(' OR ');
+  if (termClauses) {
+    where.push(`(${termClauses})`);
+    terms.forEach(t => { params.push(`%${t}%`); params.push(`%${t}%`); });
   }
 
-  return db.prepare(`
-    SELECT p.id, p.title, p.price, p.city, p.condition, p.description, p.views,
-           c.name as category_name, c.slug as category_slug,
+  let results = db.prepare(`
+    SELECT p.id, p.title, p.price, p.city, p.condition, p.description,
+           c.name as category_name, c.slug,
            u.name as seller_name, u.rating as seller_rating,
            (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image
     FROM products p
@@ -89,73 +179,97 @@ function searchProducts(parsed, db) {
     ORDER BY p.views DESC, p.likes_count DESC
     LIMIT 8
   `).all(...params);
+
+  // Если совсем мало — добавляем по категориям
+  if (results.length < 3 && categories.length > 0) {
+    const catWhere = ["p.status = 'active'", `c.slug IN (${categories.map(() => '?').join(',')})`];
+    const catParams = [...categories];
+    if (maxPrice) { catWhere.push('p.price <= ?'); catParams.push(maxPrice); }
+    const catResults = db.prepare(`
+      SELECT p.id, p.title, p.price, p.city, p.condition, p.description,
+             c.name as category_name, c.slug,
+             u.name as seller_name, u.rating as seller_rating,
+             (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN users u ON p.seller_id = u.id
+      WHERE ${catWhere.join(' AND ')}
+      ORDER BY p.views DESC LIMIT 6
+    `).all(...catParams);
+    const existingIds = new Set(results.map(r => r.id));
+    results = [...results, ...catResults.filter(r => !existingIds.has(r.id))].slice(0, 8);
+  }
+
+  return results;
 }
 
-function buildReply(text, products, parsed) {
-  const lower = text.toLowerCase();
-
+function buildReply(userText, products, intent, parsed) {
   if (products.length === 0) {
-    const tips = [];
-    if (parsed.maxPrice) tips.push(`бюджет ${formatPrice(parsed.maxPrice)}`);
-    if (parsed.condition) tips.push(parsed.condition === 'new' ? 'новые товары' : 'б/у товары');
-    return `😔 По запросу «${text}» ничего не нашлось${tips.length ? ` (${tips.join(', ')})` : ''}.\n\nПопробуйте:\n• Изменить формулировку\n• Убрать ограничения по цене\n• Поискать по другой категории`;
+    if (intent) {
+      return `🔍 К сожалению, сейчас нет товаров ${intent.label}. Попробуйте позже — продавцы добавляют новые объявления каждый день!\n\nМогу поискать что-то другое.`;
+    }
+    return `😔 По запросу «${userText}» ничего не нашлось.\n\nПопробуйте:\n• Изменить формулировку\n• Убрать ограничения по цене\n• Описать что хотите сделать или чем заняться`;
   }
 
-  const priceRange = products.length > 1
-    ? `от ${formatPrice(Math.min(...products.map(p => p.price)))} до ${formatPrice(Math.max(...products.map(p => p.price)))}`
-    : formatPrice(products[0].price);
+  const priceMin = formatPrice(Math.min(...products.map(p => p.price)));
+  const priceMax = formatPrice(Math.max(...products.map(p => p.price)));
+  const priceStr = products.length > 1 && priceMin !== priceMax ? `${priceMin} — ${priceMax}` : priceMin;
 
-  let intro = '';
-  if (lower.includes('посоветуй') || lower.includes('порекомендуй') || lower.includes('подбери')) {
-    intro = `✨ Вот что я подобрал специально для вас — ${products.length} вариант${products.length > 1 ? 'а' : ''}`;
-  } else if (lower.includes('дешев') || lower.includes('бюджет') || lower.includes('до ')) {
-    intro = `💰 Нашёл ${products.length} товар${products.length > 1 ? 'а' : ''} по выгодной цене`;
+  let reply = '';
+
+  if (intent) {
+    reply = `✅ Отлично! ${intent.label.charAt(0).toUpperCase() + intent.label.slice(1)} я подобрал ${products.length} вариант${products.length === 1 ? '' : products.length < 5 ? 'а' : 'ов'} (${priceStr}):\n\n`;
   } else {
-    intro = `🔍 Нашёл ${products.length} товар${products.length > 1 ? 'а' : ''} по вашему запросу`;
+    reply = `🔍 Нашёл ${products.length} товар${products.length === 1 ? '' : products.length < 5 ? 'а' : 'ов'} по вашему запросу (${priceStr}):\n\n`;
   }
 
-  intro += `, цены ${priceRange}.\n\n`;
+  const top = products[0];
+  reply += `⭐ Лучший вариант: **${top.title}** — ${formatPrice(top.price)}`;
+  if (top.seller_rating > 0) reply += `, рейтинг продавца ${top.seller_rating}★`;
+  reply += '.\n\n';
 
-  if (products.length > 0) {
-    const top = products[0];
-    intro += `⭐ Самый популярный: **${top.title}** — ${formatPrice(top.price)}`;
-    if (top.seller_rating > 0) intro += `, продавец ${top.seller_rating}★`;
-    intro += '.\n\n';
+  if (parsed.maxPrice && products.some(p => p.price < parsed.maxPrice * 0.6)) {
+    reply += `💡 Есть варианты значительно дешевле вашего бюджета!\n\n`;
   }
 
-  if (parsed.maxPrice && products.some(p => p.price < parsed.maxPrice * 0.7)) {
-    intro += `💡 Несколько вариантов значительно дешевле вашего бюджета!\n\n`;
-  }
-
-  intro += `Нажмите на карточку товара чтобы узнать подробности.`;
-  return intro;
+  reply += 'Нажмите на карточку для подробностей. Могу уточнить поиск — просто напишите.';
+  return reply;
 }
 
 router.post('/chat', (req, res) => {
   const { message } = req.body;
-  if (!message || !message.trim()) return res.status(400).json({ error: 'Сообщение пустое' });
+  if (!message?.trim()) return res.status(400).json({ error: 'Сообщение пустое' });
 
-  const lower = message.toLowerCase().trim();
-
-  // Проверка что вопрос о товарах
-  const offTopicPhrases = ['как дела', 'привет', 'погода', 'политика', 'напиши код', 'помоги с', 'объясни', 'расскажи про', 'что такое', 'кто такой', 'история', 'математика', 'переведи'];
-  const isOffTopic = offTopicPhrases.some(p => lower.includes(p)) && !lower.includes('товар') && !lower.includes('купить') && !lower.includes('продает') && !lower.includes('цен');
-
-  if (isOffTopic) {
+  if (isOffTopic(message)) {
     return res.json({
-      reply: '🛍️ Я помогаю только с подбором товаров на OCKO!\n\nСкажите что ищете — и я найду подходящие варианты. Например:\n• «Ищу ноутбук до 80 000 ₽»\n• «Детские игрушки»\n• «Новый велосипед»',
+      reply: '🛍️ Я специализируюсь только на подборе товаров!\n\nРасскажите чем хотите заняться или что ищете — и я найду подходящее. Например:\n• «Хочу заняться спортом»\n• «Ищу подарок до 5000 ₽»\n• «Хочу научиться фотографировать»',
       products: [],
     });
   }
 
   try {
     const db = getDB();
-    const parsed = parseQuery(message);
-    const products = searchProducts(parsed, db);
-    const reply = buildReply(message, products, parsed);
+    const intent = detectIntent(message);
+    const { maxPrice, minPrice } = parsePrice(message);
+
+    let searchTerms = [];
+    let categories = [];
+
+    if (intent) {
+      searchTerms = intent.searchTerms;
+      categories = intent.categories || [];
+    } else {
+      // Прямой поиск по словам из запроса
+      const stop = new Set(['что', 'есть', 'ищу', 'хочу', 'найди', 'покажи', 'мне', 'для', 'по', 'на', 'до', 'от', 'за', 'как', 'нужен', 'нужна', 'купить', 'посоветуй', 'подбери', 'хороший', 'лучший', 'самый', 'дешевый']);
+      searchTerms = message.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stop.has(w) && !/^\d+$/.test(w));
+    }
+
+    const products = searchByTerms(searchTerms, categories, maxPrice, minPrice, db);
+    const reply = buildReply(message, products, intent, { maxPrice, minPrice });
+
     res.json({ reply, products: products.slice(0, 4) });
   } catch (e) {
-    console.error('AI search error:', e);
+    console.error('AI error:', e);
     res.status(500).json({ error: 'Ошибка поиска' });
   }
 });
