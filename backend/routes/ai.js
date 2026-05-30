@@ -21,14 +21,47 @@ const SYSTEM_PROMPT = `Ты — умный помощник по подбору 
 6. На вопросы НЕ о товарах (политика, погода, рецепты и т.д.) отвечай ТОЛЬКО: «Я помогаю с подбором товаров на OCKO. Что ищете?»
 7. Отвечай кратко — максимум 3-4 предложения + список товаров`;
 
+// Синонимы и переводы для расширения поиска
+const SYNONYMS = {
+  'ноутбук': ['ноутбук', 'laptop', 'macbook', 'lenovo', 'asus', 'dell', 'hp'],
+  'телефон': ['телефон', 'смартфон', 'iphone', 'samsung', 'xiaomi', 'android'],
+  'смартфон': ['смартфон', 'телефон', 'iphone', 'samsung', 'android'],
+  'наушник': ['наушник', 'airpods', 'гарнитур'],
+  'часы': ['часы', 'watch', 'apple watch'],
+  'планшет': ['планшет', 'ipad', 'tablet'],
+  'велосипед': ['велосипед', 'байк', 'велик'],
+  'кроссовк': ['кроссовк', 'кеды', 'nike', 'adidas', 'puma'],
+  'куртк': ['куртк', 'пальто', 'пуховик', 'ветровк'],
+  'диван': ['диван', 'кресло', 'мягк', 'мебель'],
+  'фотоаппарат': ['фотоаппарат', 'камер', 'sony', 'canon', 'nikon'],
+  'игровой': ['игровой', 'playstation', 'xbox', 'nintendo', 'ps5'],
+  'коляск': ['коляск', 'bugaboo', 'детск'],
+  'кофемашин': ['кофемашин', 'кофеварк', 'delonghi', 'кофе'],
+};
+
+// Обрезаем окончания для поиска по основе слова
+function getSearchVariants(word) {
+  const variants = new Set([word]);
+  // Ищем по первым N символам (стемминг)
+  if (word.length > 5) variants.add(word.slice(0, -1));
+  if (word.length > 6) variants.add(word.slice(0, -2));
+  if (word.length > 7) variants.add(word.slice(0, -3));
+  // Добавляем синонимы
+  for (const [key, syns] of Object.entries(SYNONYMS)) {
+    if (word.includes(key) || key.includes(word.slice(0, -2))) {
+      syns.forEach(s => variants.add(s));
+    }
+  }
+  return [...variants];
+}
+
 function searchProducts(query, db) {
-  // Извлекаем ключевые слова для поиска
-  const words = query.toLowerCase()
+  const rawWords = query.toLowerCase()
     .replace(/[^\wа-яёa-z\s]/gi, ' ')
     .split(/\s+/)
     .filter(w => w.length > 2);
 
-  if (words.length === 0) {
+  if (rawWords.length === 0) {
     return db.prepare(`
       SELECT p.id, p.title, p.price, p.city, p.condition,
              c.name as category_name,
@@ -38,8 +71,11 @@ function searchProducts(query, db) {
     `).all();
   }
 
-  const clauses = words.map(() => '(p.title LIKE ? OR p.description LIKE ? OR c.name LIKE ?)').join(' OR ');
-  const params = words.flatMap(w => [`%${w}%`, `%${w}%`, `%${w}%`]);
+  // Расширяем каждое слово вариантами и синонимами
+  const allTerms = [...new Set(rawWords.flatMap(w => getSearchVariants(w)))];
+
+  const clauses = allTerms.map(() => '(p.title LIKE ? OR p.description LIKE ? OR c.name LIKE ?)').join(' OR ');
+  const params = allTerms.flatMap(w => [`%${w}%`, `%${w}%`, `%${w}%`]);
 
   const results = db.prepare(`
     SELECT p.id, p.title, p.price, p.city, p.condition, p.description,
