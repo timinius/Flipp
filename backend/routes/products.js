@@ -53,6 +53,7 @@ router.get('/', optionalAuth, (req, res) => {
   const products = db.prepare(`
     SELECT p.*, c.name as category_name, c.slug as category_slug,
            u.name as seller_name, u.city as seller_city, u.rating as seller_rating,
+           u.account_type as seller_account_type, u.company_name as seller_company_name,
            (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
@@ -71,7 +72,8 @@ router.get('/:id', optionalAuth, (req, res) => {
     SELECT p.*, c.name as category_name, c.slug as category_slug,
            u.name as seller_name, u.phone as seller_phone, u.city as seller_city,
            u.rating as seller_rating, u.reviews_count as seller_reviews_count,
-           u.about as seller_about, u.avatar as seller_avatar, u.created_at as seller_since
+           u.about as seller_about, u.avatar as seller_avatar, u.created_at as seller_since,
+           u.account_type as seller_account_type, u.company_name as seller_company_name, u.company_inn as seller_company_inn
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN users u ON p.seller_id = u.id

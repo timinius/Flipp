@@ -7,7 +7,7 @@ const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 const router = express.Router();
 
 router.post('/register', (req, res) => {
-  const { password, name, phone, city } = req.body;
+  const { password, name, phone, city, account_type, company_name, company_inn } = req.body;
   const email = req.body.email?.trim().toLowerCase();
   if (!email || !password || !name) {
     return res.status(400).json({ error: 'Email, пароль и имя обязательны' });
@@ -15,16 +15,21 @@ router.post('/register', (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
   }
+  const type = account_type === 'company' ? 'company' : 'personal';
+  if (type === 'company' && !company_name) {
+    return res.status(400).json({ error: 'Укажите название компании' });
+  }
   const db = getDB();
   const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (existing) return res.status(400).json({ error: 'Email уже зарегистрирован' });
 
   const hashed = bcrypt.hashSync(password, 10);
   const result = db.prepare(`
-    INSERT INTO users (email, password, name, phone, city) VALUES (?, ?, ?, ?, ?)
-  `).run(email, hashed, name, phone || null, city || 'Москва');
+    INSERT INTO users (email, password, name, phone, city, account_type, company_name, company_inn)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(email, hashed, name, phone || null, city || 'Москва', type, company_name || null, company_inn || null);
 
-  const user = db.prepare('SELECT id, email, name, phone, avatar, city, about, rating, reviews_count, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+  const user = db.prepare('SELECT id, email, name, phone, avatar, city, about, rating, reviews_count, created_at, account_type, company_name, company_inn FROM users WHERE id = ?').get(result.lastInsertRowid);
   const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user });
 });
@@ -48,17 +53,17 @@ router.post('/login', (req, res) => {
 
 router.get('/me', authenticateToken, (req, res) => {
   const db = getDB();
-  const user = db.prepare('SELECT id, email, name, phone, avatar, city, about, rating, reviews_count, created_at FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, email, name, phone, avatar, city, about, rating, reviews_count, created_at, account_type, company_name, company_inn FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
   res.json(user);
 });
 
 router.put('/me', authenticateToken, (req, res) => {
-  const { name, phone, city, about } = req.body;
+  const { name, phone, city, about, company_name, company_inn } = req.body;
   const db = getDB();
-  db.prepare('UPDATE users SET name = ?, phone = ?, city = ?, about = ? WHERE id = ?')
-    .run(name, phone, city, about, req.user.id);
-  const user = db.prepare('SELECT id, email, name, phone, avatar, city, about, rating, reviews_count, created_at FROM users WHERE id = ?').get(req.user.id);
+  db.prepare('UPDATE users SET name = ?, phone = ?, city = ?, about = ?, company_name = ?, company_inn = ? WHERE id = ?')
+    .run(name, phone, city, about, company_name || null, company_inn || null, req.user.id);
+  const user = db.prepare('SELECT id, email, name, phone, avatar, city, about, rating, reviews_count, created_at, account_type, company_name, company_inn FROM users WHERE id = ?').get(req.user.id);
   res.json(user);
 });
 

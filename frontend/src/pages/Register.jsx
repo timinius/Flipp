@@ -7,21 +7,36 @@ const CITIES = ['Москва', 'Санкт-Петербург', 'Новосиб
 export default function Register() {
   const { register, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', name: '', phone: '', city: 'Москва' });
+  const [form, setForm] = useState({
+    email: '', password: '', confirmPassword: '', name: '', phone: '', city: 'Москва',
+    account_type: 'personal', company_name: '', company_inn: '',
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
 
   if (user) { navigate('/'); return null; }
 
+  const isCompany = form.account_type === 'company';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password || !form.name) { setError('Заполните обязательные поля'); return; }
+    if (isCompany && !form.company_name) { setError('Укажите название компании'); return; }
     if (form.password !== form.confirmPassword) { setError('Пароли не совпадают'); return; }
     if (form.password.length < 6) { setError('Пароль не менее 6 символов'); return; }
     setLoading(true); setError('');
     try {
-      await register({ email: form.email, password: form.password, name: form.name, phone: form.phone, city: form.city });
+      await register({
+        email: form.email,
+        password: form.password,
+        name: form.name,
+        phone: form.phone,
+        city: form.city,
+        account_type: form.account_type,
+        company_name: isCompany ? form.company_name : undefined,
+        company_inn: isCompany ? form.company_inn : undefined,
+      });
       navigate('/');
     } catch (e) {
       setError(e.response?.data?.error || 'Ошибка регистрации');
@@ -45,12 +60,44 @@ export default function Register() {
         </div>
 
         <div className="card" style={{ padding: 28 }}>
+          {/* Переключатель типа аккаунта */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
+            {[
+              { value: 'personal', label: '👤 Частное лицо' },
+              { value: 'company', label: '🏢 Компания' },
+            ].map(opt => (
+              <button key={opt.value} type="button"
+                onClick={() => setForm(p => ({ ...p, account_type: opt.value }))}
+                style={{
+                  padding: '10px 12px', borderRadius: 10, border: '2px solid',
+                  borderColor: form.account_type === opt.value ? 'var(--primary)' : 'var(--border)',
+                  background: form.account_type === opt.value ? 'var(--primary-bg)' : 'white',
+                  color: form.account_type === opt.value ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
+                }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {error && <div className="alert alert-error">{error}</div>}
 
           <form onSubmit={handleSubmit}>
+            {isCompany && (
+              <>
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label className="form-label">Название компании *</label>
+                  <input {...f('company_name')} className="form-input" placeholder='ООО "Ромашка" или ИП Иванов' required={isCompany} />
+                </div>
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label className="form-label">ИНН компании</label>
+                  <input {...f('company_inn')} className="form-input" placeholder="1234567890" maxLength={12} />
+                </div>
+              </>
+            )}
             <div className="form-group" style={{ marginBottom: 16 }}>
-              <label className="form-label">Имя и фамилия *</label>
-              <input {...f('name')} className="form-input" placeholder="Иван Иванов" required />
+              <label className="form-label">{isCompany ? 'Контактное лицо *' : 'Имя и фамилия *'}</label>
+              <input {...f('name')} className="form-input" placeholder={isCompany ? 'Иван Иванов (представитель)' : 'Иван Иванов'} required />
             </div>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label className="form-label">Email *</label>
@@ -89,7 +136,7 @@ export default function Register() {
 
           <div style={{ textAlign: 'center', fontSize: 14 }}>
             Уже есть аккаунт?{' '}
-            <Link to="/login" style={{ color: 'var(--red)', fontWeight: 600 }}>Войти</Link>
+            <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Войти</Link>
           </div>
         </div>
       </div>

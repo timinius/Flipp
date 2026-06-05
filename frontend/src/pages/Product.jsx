@@ -253,13 +253,27 @@ export default function Product() {
 
             {/* Seller card */}
             <div className="card" style={{ padding: 16 }}>
-              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 14 }}>Продавец</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>Продавец</div>
+                {product.seller_account_type === 'company' && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 7px', borderRadius: 6, background: '#EBF3EC', color: 'var(--primary)' }}>
+                    🏢 Компания
+                  </span>
+                )}
+              </div>
               <Link to={`/seller/${product.seller_id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
-                  {product.seller_name?.charAt(0) || '?'}
+                <div style={{ width: 48, height: 48, borderRadius: product.seller_account_type === 'company' ? 10 : '50%', background: 'var(--green)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                  {product.seller_account_type === 'company' ? '🏢' : (product.seller_name?.charAt(0) || '?')}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>{product.seller_name}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>
+                    {product.seller_account_type === 'company' && product.seller_company_name
+                      ? product.seller_company_name
+                      : product.seller_name}
+                  </div>
+                  {product.seller_account_type === 'company' && product.seller_company_name && (
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{product.seller_name}</div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <StarRating value={product.seller_rating || 0} size={14} />
                     <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{product.seller_rating?.toFixed(1) || '0'} ({product.seller_reviews_count || 0})</span>

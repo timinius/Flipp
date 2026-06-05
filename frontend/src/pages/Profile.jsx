@@ -14,6 +14,8 @@ export default function Profile() {
     phone: user?.phone || '',
     city: user?.city || 'Москва',
     about: user?.about || '',
+    company_name: user?.company_name || '',
+    company_inn: user?.company_inn || '',
   });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
@@ -34,7 +36,11 @@ export default function Profile() {
     if (!form.name.trim()) { setError('Введите имя'); return; }
     setSaving(true); setError(''); setSuccess('');
     try {
-      const res = await api.put('/auth/me', form);
+      const res = await api.put('/auth/me', {
+        ...form,
+        company_name: user.account_type === 'company' ? form.company_name : undefined,
+        company_inn: user.account_type === 'company' ? form.company_inn : undefined,
+      });
       updateUser(res.data);
       setSuccess('Профиль сохранён');
       setTimeout(() => setSuccess(''), 3000);
@@ -74,7 +80,7 @@ export default function Profile() {
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700 }}>{user.name}</h1>
             <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{user.email}</div>
-            <Link to={`/seller/${user.id}`} style={{ fontSize: 13, color: 'var(--red)', marginTop: 2, display: 'inline-block' }}>
+            <Link to={`/seller/${user.id}`} style={{ fontSize: 13, color: 'var(--primary)', marginTop: 2, display: 'inline-block' }}>
               Публичный профиль →
             </Link>
           </div>
@@ -96,7 +102,35 @@ export default function Profile() {
 
         {activeTab === 'profile' && (
           <form onSubmit={handleProfile} className="card" style={{ padding: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Личные данные</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700 }}>
+                {user.account_type === 'company' ? 'Данные компании' : 'Личные данные'}
+              </h2>
+              <span style={{
+                fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                background: user.account_type === 'company' ? '#EBF3EC' : '#F0F4FF',
+                color: user.account_type === 'company' ? 'var(--primary)' : '#5B7FDE',
+              }}>
+                {user.account_type === 'company' ? '🏢 Компания' : '👤 Частное лицо'}
+              </span>
+            </div>
+
+            {user.account_type === 'company' && (
+              <div style={{ marginBottom: 16, padding: 16, background: 'var(--primary-bg)', borderRadius: 10, border: '1px solid var(--primary)', borderOpacity: 0.3 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--primary)', marginBottom: 12 }}>Реквизиты компании</div>
+                <div className="form-group" style={{ marginBottom: 12 }}>
+                  <label className="form-label">Название компании *</label>
+                  <input value={form.company_name} onChange={e => setForm(p => ({ ...p, company_name: e.target.value }))}
+                    className="form-input" placeholder='ООО "Ромашка" или ИП Иванов' />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">ИНН компании</label>
+                  <input value={form.company_inn} onChange={e => setForm(p => ({ ...p, company_inn: e.target.value }))}
+                    className="form-input" placeholder="1234567890" maxLength={12} />
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div className="form-group">
                 <label className="form-label">Имя и фамилия *</label>
@@ -114,9 +148,9 @@ export default function Profile() {
               </select>
             </div>
             <div className="form-group" style={{ marginBottom: 20 }}>
-              <label className="form-label">О себе</label>
+              <label className="form-label">{user.account_type === 'company' ? 'О компании' : 'О себе'}</label>
               <textarea value={form.about} onChange={e => setForm(p => ({ ...p, about: e.target.value }))}
-                placeholder="Расскажите о себе как о продавце..." className="form-textarea" rows={4} />
+                placeholder={user.account_type === 'company' ? 'Расскажите о компании...' : 'Расскажите о себе как о продавце...'} className="form-textarea" rows={4} />
               <span className="form-hint">Эта информация будет видна на вашей странице продавца</span>
             </div>
             {error && <div className="alert alert-error">{error}</div>}

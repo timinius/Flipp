@@ -169,6 +169,11 @@ function initDB() {
     );
   `);
 
+  // Migrations — safe to run on existing DB
+  try { db.exec("ALTER TABLE users ADD COLUMN account_type TEXT DEFAULT 'personal'"); } catch(e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN company_name TEXT"); } catch(e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN company_inn TEXT"); } catch(e) {}
+
   const catCount = db.prepare('SELECT COUNT(*) as count FROM categories').get();
   if (catCount.count === 0) {
     const insertCat = db.prepare('INSERT INTO categories (name, icon, slug) VALUES (?, ?, ?)');
