@@ -35,17 +35,18 @@ export default function Home() {
   return (
     <div>
       {/* Hero */}
+      <div style={{ padding: '8px 12px 0', maxWidth: 1264, margin: '0 auto' }}>
       <section style={{
         background: 'linear-gradient(145deg, #0F2318 0%, #1A3A27 45%, #243F2E 100%)',
-        color: 'white', padding: '80px 20px 88px', textAlign: 'center',
-        position: 'relative', overflow: 'hidden',
+        color: 'white', padding: '64px 40px 72px', textAlign: 'center',
+        position: 'relative', overflow: 'hidden', borderRadius: 16,
       }}>
         {/* Декоративные элементы */}
         <div style={{ position: 'absolute', top: -120, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(142,211,168,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -80, left: -60, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(54,133,90,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '40%', left: '10%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(142,211,168,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-        <div className="container" style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', maxWidth: 700, margin: '0 auto' }}>
           {/* Pill badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(142,211,168,0.12)', border: '1px solid rgba(142,211,168,0.2)', borderRadius: 100, padding: '6px 16px', fontSize: 13, marginBottom: 28, backdropFilter: 'blur(12px)' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-mint)', display: 'inline-block' }} />
@@ -95,6 +96,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </div>
 
       {/* Categories */}
       <section style={{ padding: '40px 0' }}>

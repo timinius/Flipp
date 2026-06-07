@@ -65,8 +65,9 @@ export default function Header() {
 
   return (
     <>
-      <header style={{ background: '#1A2E1F', color: 'white', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 20px rgba(0,0,0,0.18)' }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 12, height: 60 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg)', padding: '8px 12px' }}>
+      <header style={{ background: '#1A2E1F', color: 'white', borderRadius: 14, maxWidth: 1240, margin: '0 auto', boxShadow: '0 4px 28px rgba(0,0,0,0.22)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: 60, padding: '0 20px' }}>
 
           {/* Logo */}
           <Link to="/" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -182,10 +183,11 @@ export default function Header() {
           </div>
         )}
       </header>
+      </div>
 
       {/* Mobile Menu Overlay */}
       {mobileOpen && (
-        <div style={{ position: 'fixed', top: 60, left: 0, right: 0, bottom: 0, zIndex: 99, display: 'flex' }}>
+        <div style={{ position: 'fixed', top: 76, left: 0, right: 0, bottom: 0, zIndex: 99, display: 'flex' }}>
           <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)' }} onClick={() => setMobileOpen(false)} />
           <div style={{ width: 280, background: '#1A2E1F', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
