@@ -4,10 +4,10 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getDB } = require('../db/init');
+const { getDB, DB_PATH } = require('../db/init');
 const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 
-const uploadDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
+const uploadDir = process.env.UPLOADS_PATH || path.join(path.dirname(DB_PATH), 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const avatarUpload = multer({
   storage: multer.diskStorage({

@@ -274,4 +274,4 @@ function initDB() {
   console.log('База данных инициализирована');
 }
 
-module.exports = { getDB, initDB };
+module.exports = { getDB, initDB, DB_PATH };

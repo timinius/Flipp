@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { initDB } = require('./db/init');
+const { initDB, DB_PATH } = require('./db/init');
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -26,7 +26,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
+const uploadsDir = process.env.UPLOADS_PATH || path.join(path.dirname(DB_PATH), 'uploads');
 app.use('/uploads', express.static(uploadsDir));
 
 app.use('/api/auth', authRoutes);

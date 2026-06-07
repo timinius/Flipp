@@ -173,19 +173,23 @@ const HERO_CARDS = [
   { emoji: '🚲', name: 'Велосипед Trek FX3', price: '47 500 ₽',  badge: 'Б/у',   bg: '#FFF4E0', stars: '4.7' },
   { emoji: '🛋️', name: 'Диван угловой',      price: '34 200 ₽',  badge: 'Б/у',   bg: '#FFF0F0', stars: '4.8' },
   { emoji: '👟', name: 'Nike Air Jordan 1',  price: '12 990 ₽',  badge: 'Новый', bg: '#F4F0FF', stars: '4.9' },
+  { emoji: '🎮', name: 'PlayStation 5',       price: '44 990 ₽',  badge: 'Б/у',   bg: '#EEF4FF', stars: '4.8' },
+  { emoji: '📸', name: 'Canon EOS R50',       price: '67 500 ₽',  badge: 'Новый', bg: '#FFF8F0', stars: '4.9' },
 ];
 
-// N=5: pos 0 = центр, 1 = правая, 2 = правая скрытая, 3 = левая скрытая, 4 = левая
-// x: горизонталь, ry: rotateY для цилиндра, s: scale, o: opacity, z: zIndex
+// N=7: pos 0=центр, 1=ближняя правая, 2=дальняя правая, 3=скрытая правая,
+//       4=скрытая левая, 5=дальняя левая, 6=ближняя левая
 const CPOS = {
-  0: { x:    0, ry:   0, s: 1.00, o: 1.00, z: 5 },
-  1: { x:  256, ry: -34, s: 0.70, o: 0.80, z: 4 },
-  2: { x:  430, ry: -54, s: 0.52, o: 0.00, z: 3 },
-  3: { x: -430, ry:  54, s: 0.52, o: 0.00, z: 3 },
-  4: { x: -256, ry:  34, s: 0.70, o: 0.80, z: 4 },
+  0: { x:    0, ry:   0, s: 1.00, o: 1.00, z: 7 },
+  1: { x:  158, ry: -22, s: 0.80, o: 0.85, z: 6 },
+  2: { x:  292, ry: -40, s: 0.63, o: 0.65, z: 5 },
+  3: { x:  410, ry: -55, s: 0.50, o: 0.00, z: 4 },
+  4: { x: -410, ry:  55, s: 0.50, o: 0.00, z: 4 },
+  5: { x: -292, ry:  40, s: 0.63, o: 0.65, z: 5 },
+  6: { x: -158, ry:  22, s: 0.80, o: 0.85, z: 6 },
 };
 const N_HC = HERO_CARDS.length;
-const HIDDEN = new Set([2, 3]);
+const HIDDEN = new Set([3, 4]);
 
 function HeroCards() {
   const [active, setActive] = useState(0);
@@ -200,7 +204,7 @@ function HeroCards() {
 
   return (
     <div style={{
-      position: 'relative', width: 630, height: 310,
+      position: 'relative', width: 720, height: 310,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       perspective: '1000px',
     }}>
